@@ -35,6 +35,7 @@ class TextEditor extends StatefulWidget {
   final ValueChanged<String>? onTextChanged;
   final bool? fontSizeEditable;
   final bool? textStyleEditable;
+  final int? defaultBackgroundColorIndex;
 
   /// The text alignment
   final TextAlign? textAlingment;
@@ -51,12 +52,16 @@ class TextEditor extends StatefulWidget {
 
   /// Editor's default text
   final String text;
+  final String? hintText;
 
   /// Decoration to customize the editor
   final EditorDecoration? decoration;
 
   final double? minFontSize;
   final double? maxFontSize;
+
+  /// default the end index
+  final int? defaultTextPosition;
 
   /// Create a [TextEditor] widget
   ///
@@ -81,7 +86,10 @@ class TextEditor extends StatefulWidget {
       this.decoration,
       this.backgroundColorPaletteColors,
       this.fontSizeEditable,
-      this.textStyleEditable});
+      this.textStyleEditable,
+      this.defaultBackgroundColorIndex,
+      this.defaultTextPosition,
+      this.hintText});
 
   @override
   _TextEditorState createState() => _TextEditorState();
@@ -93,6 +101,8 @@ class _TextEditorState extends State<TextEditor> {
   late List<Color> _backgroundColors;
   late Widget _doneButton;
   late Color currentBackgroundColor;
+  late int defaultBackgroundColorIndex;
+  late int defaultTextPosition;
   bool _fontSizeEditable = false;
   bool _textStyleEditable = false;
   @override
@@ -119,7 +129,9 @@ class _TextEditorState extends State<TextEditor> {
           Color(int.parse('0xff009432')),
           Color(int.parse('0xff0652DD')),
         ];
-    currentBackgroundColor = _backgroundColors[0];
+    defaultBackgroundColorIndex = widget.defaultBackgroundColorIndex ?? 0;
+    defaultTextPosition = widget.defaultTextPosition ?? widget.text.length;
+    currentBackgroundColor = _backgroundColors[defaultBackgroundColorIndex];
     // Rebuild whenever a value changes
     _textStyleModel.addListener(() {
       setState(() {});
@@ -230,7 +242,9 @@ class _TextEditorState extends State<TextEditor> {
                       child: Center(
                         child: TextField(
                           controller: TextEditingController()
-                            ..text = _textStyleModel.text,
+                            ..text = _textStyleModel.text
+                            ..selection = TextSelection.fromPosition(
+                                TextPosition(offset: defaultTextPosition)),
                           onChanged: (value) {
                             _textStyleModel.text = value;
                             _onChangeHandler();
@@ -241,7 +255,9 @@ class _TextEditorState extends State<TextEditor> {
                           textAlign: _textStyleModel.textAlign!,
                           autofocus: true,
                           cursorColor: Colors.white,
-                          decoration: null,
+                          decoration: InputDecoration.collapsed(
+                              hintText: widget.hintText,
+                              hintStyle: TextStyle(color: Colors.white30)),
                         ),
                       ),
                     ),
