@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:text_editor/text_editor_data.dart';
 
 class ColorPalette extends StatefulWidget {
   final List<Color> colors;
-
-  ColorPalette(this.colors);
+  final Function(int i) onTap;
+  final Color selectedColor;
+  ColorPalette(this.colors, {required this.onTap, required this.selectedColor});
 
   @override
   _ColorPaletteState createState() => _ColorPaletteState();
@@ -13,7 +13,6 @@ class ColorPalette extends StatefulWidget {
 class _ColorPaletteState extends State<ColorPalette> {
   @override
   Widget build(BuildContext context) {
-    final textStyleModel = TextEditorData.of(context).textStyleModel;
     return Container(
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -24,7 +23,7 @@ class _ColorPaletteState extends State<ColorPalette> {
               height: 40,
               margin: EdgeInsets.only(right: 7),
               decoration: BoxDecoration(
-                color: textStyleModel.textStyle?.color,
+                color: widget.selectedColor,
                 border: Border.all(color: Colors.white, width: 1.5),
                 borderRadius: BorderRadius.circular(100),
               ),
@@ -35,7 +34,10 @@ class _ColorPaletteState extends State<ColorPalette> {
                 ),
               ),
             ),
-            ...widget.colors.map((color) => _ColorPicker(color)).toList(),
+            ...List.generate(
+                widget.colors.length,
+                (i) => _ColorPicker(widget.colors[i],
+                    index: i, onTap: widget.onTap))
           ],
         ),
       ),
@@ -45,15 +47,14 @@ class _ColorPaletteState extends State<ColorPalette> {
 
 class _ColorPicker extends StatelessWidget {
   final Color color;
-
-  _ColorPicker(this.color);
+  final int index;
+  final Function(int i) onTap;
+  _ColorPicker(this.color, {required this.index, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final textStyleModel = TextEditorData.read(context).textStyleModel;
-
     return GestureDetector(
-      onTap: () => textStyleModel.editTextColor(color),
+      onTap: () => onTap(index),
       child: Container(
         width: 40,
         height: 40,

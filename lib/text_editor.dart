@@ -22,7 +22,8 @@ class TextEditor extends StatefulWidget {
   final List<String> fonts;
 
   /// After edit process completed, [onEditCompleted] callback will be called.
-  final void Function(TextStyle, TextAlign, String) onEditCompleted;
+  final void Function(TextStyle, TextAlign, Color, String)? onEditCompleted;
+  final void Function(TextStyle, TextAlign, Color, String)? onChange;
 
   /// [onTextAlignChanged] will be called after [textAlingment] prop has changed
   final ValueChanged<TextAlign>? onTextAlignChanged;
@@ -32,6 +33,8 @@ class TextEditor extends StatefulWidget {
 
   /// [onTextChanged] will be called after [text] prop has changed
   final ValueChanged<String>? onTextChanged;
+  final bool? fontSizeEditable;
+  final bool? textStyleEditable;
 
   /// The text alignment
   final TextAlign? textAlingment;
@@ -44,6 +47,7 @@ class TextEditor extends StatefulWidget {
 
   /// Editor's palette colors
   final List<Color>? paletteColors;
+  final List<Color>? backgroundColorPaletteColors;
 
   /// Editor's default text
   final String text;
@@ -60,21 +64,24 @@ class TextEditor extends StatefulWidget {
   ///
   /// After edit process completed, [onEditCompleted] callback will be called
   /// with new [textStyle], [textAlingment] and [text] value
-  TextEditor({
-    required this.fonts,
-    required this.onEditCompleted,
-    this.paletteColors,
-    this.backgroundColor,
-    this.text = '',
-    this.textStyle,
-    this.textAlingment,
-    this.minFontSize = 1,
-    this.maxFontSize = 100,
-    this.onTextAlignChanged,
-    this.onTextStyleChanged,
-    this.onTextChanged,
-    this.decoration,
-  });
+  TextEditor(
+      {required this.fonts,
+      this.onEditCompleted,
+      this.onChange,
+      this.paletteColors,
+      this.backgroundColor,
+      this.text = '',
+      this.textStyle,
+      this.textAlingment,
+      this.minFontSize = 1,
+      this.maxFontSize = 100,
+      this.onTextAlignChanged,
+      this.onTextStyleChanged,
+      this.onTextChanged,
+      this.decoration,
+      this.backgroundColorPaletteColors,
+      this.fontSizeEditable,
+      this.textStyleEditable});
 
   @override
   _TextEditorState createState() => _TextEditorState();
@@ -83,8 +90,11 @@ class TextEditor extends StatefulWidget {
 class _TextEditorState extends State<TextEditor> {
   late TextStyleModel _textStyleModel;
   late FontOptionModel _fontOptionModel;
+  late List<Color> _backgroundColors;
   late Widget _doneButton;
-
+  late Color currentBackgroundColor;
+  bool _fontSizeEditable = false;
+  bool _textStyleEditable = false;
   @override
   void initState() {
     _textStyleModel = TextStyleModel(
@@ -97,11 +107,29 @@ class _TextEditorState extends State<TextEditor> {
       widget.fonts,
       colors: widget.paletteColors,
     );
-
+    _backgroundColors = widget.backgroundColorPaletteColors ??
+        [
+          Color(int.parse('0xffEA2027')),
+          Color(int.parse('0xff006266')),
+          Color(int.parse('0xff1B1464')),
+          Color(int.parse('0xff5758BB')),
+          Color(int.parse('0xff6F1E51')),
+          Color(int.parse('0xffB53471')),
+          Color(int.parse('0xffEE5A24')),
+          Color(int.parse('0xff009432')),
+          Color(int.parse('0xff0652DD')),
+        ];
+    currentBackgroundColor = _backgroundColors[0];
     // Rebuild whenever a value changes
     _textStyleModel.addListener(() {
       setState(() {});
     });
+    if (widget.fontSizeEditable != null) {
+      _fontSizeEditable = widget.fontSizeEditable!;
+    }
+    if (widget.textStyleEditable != null) {
+      _textStyleEditable = widget.textStyleEditable!;
+    }
 
     // Rebuild whenever a value changes
     _fontOptionModel.addListener(() {
@@ -116,11 +144,25 @@ class _TextEditorState extends State<TextEditor> {
   }
 
   void _editCompleteHandler() {
-    widget.onEditCompleted(
-      _textStyleModel.textStyle!,
-      _textStyleModel.textAlign!,
-      _textStyleModel.text,
-    );
+    if (widget.onEditCompleted != null) {
+      widget.onEditCompleted!(
+        _textStyleModel.textStyle!,
+        _textStyleModel.textAlign!,
+        currentBackgroundColor,
+        _textStyleModel.text,
+      );
+    }
+  }
+
+  void _onChangeHandler() {
+    if (widget.onChange != null) {
+      widget.onChange!(
+        _textStyleModel.textStyle!,
+        _textStyleModel.textAlign!,
+        currentBackgroundColor,
+        _textStyleModel.text,
+      );
+    }
   }
 
   @override
@@ -130,61 +172,69 @@ class _TextEditorState extends State<TextEditor> {
       fontOptionModel: _fontOptionModel,
       child: Container(
         padding: EdgeInsets.only(right: 10, left: 10),
-        color: widget.backgroundColor,
+        color: currentBackgroundColor,
         child: Column(
           children: [
-            Row(
-              children: [
-                Expanded(child: Container()),
-                Expanded(
-                  flex: 3,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+            _textStyleEditable
+                ? Row(
                     children: [
-                      TextAlignment(
-                        left: widget.decoration?.alignment?.left,
-                        center: widget.decoration?.alignment?.center,
-                        right: widget.decoration?.alignment?.right,
-                      ),
-                      SizedBox(width: 20),
-                      FontOptionSwitch(
-                        fontFamilySwitch: widget.decoration?.fontFamily,
-                        colorPaletteSwitch: widget.decoration?.colorPalette,
-                      ),
-                      SizedBox(width: 20),
-                      TextBackgroundColor(
-                        enableWidget: widget.decoration?.textBackground?.enable,
-                        disableWidget:
-                            widget.decoration?.textBackground?.disable,
+                      Expanded(child: Container()),
+                      Expanded(
+                          flex: 3,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              TextAlignment(
+                                left: widget.decoration?.alignment?.left,
+                                center: widget.decoration?.alignment?.center,
+                                right: widget.decoration?.alignment?.right,
+                              ),
+                              SizedBox(width: 20),
+                              FontOptionSwitch(
+                                fontFamilySwitch: widget.decoration?.fontFamily,
+                                colorPaletteSwitch:
+                                    widget.decoration?.colorPalette,
+                              ),
+                              SizedBox(width: 20),
+                              TextBackgroundColor(
+                                enableWidget:
+                                    widget.decoration?.textBackground?.enable,
+                                disableWidget:
+                                    widget.decoration?.textBackground?.disable,
+                              ),
+                            ],
+                          )),
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: GestureDetector(
+                            onTap: _editCompleteHandler,
+                            child: _doneButton,
+                          ),
+                        ),
                       ),
                     ],
-                  ),
-                ),
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: GestureDetector(
-                      onTap: _editCompleteHandler,
-                      child: _doneButton,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+                  )
+                : SizedBox.shrink(),
             Expanded(
               child: Row(
                 children: [
-                  FontSize(
-                    minFontSize: widget.minFontSize!,
-                    maxFontSize: widget.maxFontSize!,
-                  ),
+                  _fontSizeEditable
+                      ? FontSize(
+                          minFontSize: widget.minFontSize!,
+                          maxFontSize: widget.maxFontSize!,
+                        )
+                      : SizedBox.shrink(),
                   Expanded(
                     child: Container(
                       child: Center(
                         child: TextField(
                           controller: TextEditingController()
                             ..text = _textStyleModel.text,
-                          onChanged: (value) => _textStyleModel.text = value,
+                          onChanged: (value) {
+                            _textStyleModel.text = value;
+                            _onChangeHandler();
+                          },
                           maxLines: null,
                           keyboardType: TextInputType.multiline,
                           style: _textStyleModel.textStyle,
@@ -203,7 +253,16 @@ class _TextEditorState extends State<TextEditor> {
               margin: EdgeInsets.only(bottom: 5),
               child: _fontOptionModel.status == FontOptionStatus.fontFamily
                   ? FontFamily(_fontOptionModel.fonts)
-                  : ColorPalette(_fontOptionModel.colors!),
+                  : ColorPalette(_backgroundColors,
+                      selectedColor: currentBackgroundColor,
+                      onTap: (int index) {
+                      // todo
+                      final color = _fontOptionModel.colors![index];
+                      currentBackgroundColor = _backgroundColors[index];
+                      _textStyleModel.editTextColor(color);
+                      _onChangeHandler();
+                      // change background color
+                    }),
             ),
           ],
         ),
