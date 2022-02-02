@@ -265,6 +265,7 @@ class _TextEditorState extends State<TextEditor> {
                 ],
               ),
             ),
+            SizedBox(height: 10),
             Container(
               margin: EdgeInsets.only(bottom: 5),
               child: _fontOptionModel.status == FontOptionStatus.fontFamily

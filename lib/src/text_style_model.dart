@@ -14,8 +14,8 @@ class TextStyleModel extends ChangeNotifier {
     this.textAlign,
     this.textStyle,
   }) {
-    textStyle = textStyle ?? TextStyle(fontSize: 10);
-    textAlign = textAlign ?? TextAlign.center;
+    textStyle = textStyle ?? TextStyle(fontSize: 30);
+    textAlign = textAlign ?? TextAlign.left;
 
     textBackgroundStatus = textStyle!.backgroundColor == null ||
             textStyle!.backgroundColor == Colors.transparent
